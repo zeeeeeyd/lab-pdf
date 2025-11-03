@@ -10,7 +10,7 @@ interface LaboratoryData {
   faculty: string;
   description: string;
   keywords: string;
-  equipes: string;
+  equipes: Array<{ name: string; description: string }>;
   director: string;
   arreteCreation: string;
   code: string;
