@@ -114,15 +114,20 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Faculty *
             </label>
-            <input
-              type="text"
+            <select
               name="faculty"
               value={formData.faculty}
               onChange={handleChange}
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              placeholder="Enter faculty"
-            />
+            >
+              <option value="">Select a faculty</option>
+              <option value="FSEI">FSEI - Faculty of Exact Sciences and Computer Science</option>
+              <option value="FLE">FLE - Faculty of Letters and Languages</option>
+              <option value="MEDECINE">MEDECINE - Faculty of Medicine</option>
+              <option value="FST">FST - Faculty of Science and Technology</option>
+              <option value="FDSP">FDSP - Faculty of Law and Political Science</option>
+            </select>
           </div>
         </div>
 

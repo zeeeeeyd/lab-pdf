@@ -20,7 +20,51 @@ interface LaboratoryPreviewProps {
   onDownload: () => void;
 }
 
+const getFacultyColors = (faculty: string) => {
+  const colors: { [key: string]: { primary: string; light: string; text: string; fullName: string; abbr: string } } = {
+    'FSEI': {
+      primary: '#DC2626',
+      light: '#FEE2E2',
+      text: '#991B1B',
+      fullName: 'Faculty of Exact Sciences and Computer Science',
+      abbr: 'FSEI'
+    },
+    'FLE': {
+      primary: '#16A34A',
+      light: '#DCFCE7',
+      text: '#166534',
+      fullName: 'Faculty of Letters and Languages',
+      abbr: 'FLE'
+    },
+    'MEDECINE': {
+      primary: '#2563EB',
+      light: '#DBEAFE',
+      text: '#1E40AF',
+      fullName: 'Faculty of Medicine',
+      abbr: 'MEDECINE'
+    },
+    'FST': {
+      primary: '#EA580C',
+      light: '#FFEDD5',
+      text: '#C2410C',
+      fullName: 'Faculty of Science and Technology',
+      abbr: 'FST'
+    },
+    'FDSP': {
+      primary: '#9333EA',
+      light: '#F3E8FF',
+      text: '#6B21A8',
+      fullName: 'Faculty of Law and Political Science',
+      abbr: 'FDSP'
+    }
+  };
+
+  return colors[faculty] || colors['FSEI'];
+};
+
 export default function LaboratoryPreview({ data, onClose, onDownload }: LaboratoryPreviewProps) {
+  const facultyColors = getFacultyColors(data.faculty);
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
       <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
@@ -43,146 +87,212 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
           </div>
         </div>
 
-        {/* A4 Document Preview */}
         <div className="p-8">
-          <div 
-            id="laboratory-document" 
-            className="bg-white shadow-lg mx-auto"
+          <div
+            id="laboratory-document"
+            className="bg-white shadow-lg mx-auto relative"
             style={{
               width: '210mm',
-              minHeight: '297mm',
-              padding: '15mm',
-              fontSize: '11px',
-              lineHeight: '1.4',
+              height: '297mm',
+              padding: '0',
+              fontSize: '9px',
+              lineHeight: '1.3',
               fontFamily: 'system-ui, -apple-system, sans-serif',
-              background: '#ffffff'
+              background: '#ffffff',
+              overflow: 'hidden'
             }}
           >
-            {/* Header */}
-            <div 
-              className="text-white p-6 mb-6 rounded-sm"
-              style={{
-                background: 'linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%)',
-                border: '1px solid #1e3a8a'
-              }}
-            >
-              <h1 className="text-xl font-bold text-center mb-2">
-                ANNUAIRE DES LABORATOIRES DE RECHERCHE
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '80px',
+              height: '100%',
+              backgroundColor: facultyColors.primary
+            }}>
+              <div style={{
+                position: 'absolute',
+                top: '30px',
+                left: '50%',
+                transform: 'translateX(-50%)',
+                width: '60px',
+                height: '60px',
+                backgroundColor: 'white',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                color: facultyColors.primary
+              }}>
+                {facultyColors.abbr}
+              </div>
+            </div>
+
+            <div style={{
+              position: 'absolute',
+              top: '120px',
+              left: '40px',
+              bottom: '20px',
+              width: '2px',
+              backgroundColor: facultyColors.primary
+            }} />
+
+            <div style={{ marginLeft: '95px', padding: '25px 25px 25px 15px' }}>
+              <div style={{
+                fontSize: '8px',
+                color: facultyColors.text,
+                marginBottom: '6px',
+                fontWeight: '600'
+              }}>
+                {facultyColors.fullName}
+              </div>
+
+              <h1 style={{
+                fontSize: '16px',
+                fontWeight: 'bold',
+                color: '#1F2937',
+                marginBottom: '12px',
+                lineHeight: '1.2'
+              }}>
+                {data.name || 'N/A'}
               </h1>
-              <div className="text-center text-blue-100 text-xs font-medium">
-                Fiche d'Information Scientifique et Administrative
-              </div>
-              <div className="text-center text-blue-200 text-xs mt-2">
-                {new Date().toLocaleDateString('en-US', { 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </div>
-            </div>
 
-            {/* Main Information */}
-            <div className="space-y-4 mb-6">
-              {/* Basic Information Row */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="p-3 border border-blue-200" style={{ backgroundColor: '#eff6ff' }}>
-                  <div className="font-bold text-blue-900 text-xs mb-1">DÉNOMINATION</div>
-                  <div className="text-gray-800 font-semibold text-sm">{data.name || 'N/A'}</div>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: '6px',
+                fontSize: '8px',
+                marginBottom: '10px'
+              }}>
+                <div>
+                  <span style={{ fontWeight: 'bold', color: '#374151' }}>Arrêté de création :</span>
+                  <span style={{ marginLeft: '4px', color: '#6B7280' }}>{data.arreteCreation || 'N/A'}</span>
                 </div>
-                <div className="p-3 border border-blue-200" style={{ backgroundColor: '#f0f9ff' }}>
-                  <div className="font-bold text-blue-900 text-xs mb-1">FACULTÉ</div>
-                  <div className="text-gray-800 font-medium text-sm">{data.faculty || 'N/A'}</div>
+                <div>
+                  <span style={{ fontWeight: 'bold', color: '#374151' }}>Code :</span>
+                  <span style={{ marginLeft: '4px', color: '#6B7280' }}>{data.code || 'N/A'}</span>
                 </div>
-                <div className="p-3 border border-green-200" style={{ backgroundColor: '#f0fdf4' }}>
-                  <div className="font-bold text-green-900 text-xs mb-1">CODE</div>
-                  <div className="text-gray-800 font-mono font-bold text-sm">{data.code || 'N/A'}</div>
+                <div>
+                  <span style={{ fontWeight: 'bold', color: '#374151' }}>Domiciliation :</span>
+                  <span style={{ marginLeft: '4px', color: '#6B7280' }}>{data.domiciliation || 'N/A'}</span>
                 </div>
-              </div>
-
-              {/* Administrative Information Row */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="p-3 border border-blue-200" style={{ backgroundColor: '#eff6ff' }}>
-                  <div className="font-bold text-blue-900 text-xs mb-1">DIRECTEUR</div>
-                  <div className="text-gray-800 font-medium text-sm">{data.director || 'N/A'}</div>
+                <div>
+                  <span style={{ fontWeight: 'bold', color: '#374151' }}>Agence thématique de rattachement :</span>
+                  <span style={{ marginLeft: '4px', color: '#6B7280' }}>{data.agenceThematique || 'N/A'}</span>
                 </div>
-                <div className="p-3 border border-green-200" style={{ backgroundColor: '#f0fdf4' }}>
-                  <div className="font-bold text-green-900 text-xs mb-1">MOTS-CLÉS</div>
-                  <div className="text-gray-800 text-sm">{data.keywords || 'N/A'}</div>
+                <div>
+                  <span style={{ fontWeight: 'bold', color: '#374151' }}>Directeur :</span>
+                  <span style={{ marginLeft: '4px', color: '#6B7280' }}>{data.director || 'N/A'}</span>
+                </div>
+                <div>
+                  <span style={{ fontWeight: 'bold', color: '#374151' }}>E-mail :</span>
+                  <span style={{ marginLeft: '4px', color: '#6B7280' }}>N/A</span>
+                </div>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <span style={{ fontWeight: 'bold', color: '#374151' }}>Tel :</span>
+                  <span style={{ marginLeft: '4px', color: '#6B7280' }}>N/A</span>
                 </div>
               </div>
 
-              {/* Administrative Details Row */}
-              <div className="grid grid-cols-3 gap-4">
-                <div className="p-3 border border-blue-200" style={{ backgroundColor: '#f0f9ff' }}>
-                  <div className="font-bold text-blue-900 text-xs mb-1">ARRÊTÉ DE CRÉATION</div>
-                  <div className="text-gray-800 text-xs">{data.arreteCreation || 'N/A'}</div>
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                backgroundColor: facultyColors.light,
+                borderLeft: `3px solid ${facultyColors.primary}`,
+                borderRadius: '2px'
+              }}>
+                <div style={{
+                  fontSize: '9px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  backgroundColor: facultyColors.primary,
+                  padding: '4px 8px',
+                  marginBottom: '8px',
+                  borderRadius: '2px',
+                  display: 'inline-block'
+                }}>
+                  Descriptif des activités de recherche du laboratoire :
                 </div>
-                <div className="p-3 border border-blue-200" style={{ backgroundColor: '#f0f9ff' }}>
-                  <div className="font-bold text-blue-900 text-xs mb-1">DOMICILIATION</div>
-                  <div className="text-gray-800 text-xs">{data.domiciliation || 'N/A'}</div>
-                </div>
-                <div className="p-3 border border-green-200" style={{ backgroundColor: '#f0fdf4' }}>
-                  <div className="font-bold text-green-900 text-xs mb-1">AGENCE THÉMATIQUE</div>
-                  <div className="text-gray-800 text-xs">{data.agenceThematique || 'N/A'}</div>
+                <div style={{
+                  fontSize: '8px',
+                  color: '#1F2937',
+                  lineHeight: '1.5',
+                  textAlign: 'justify'
+                }}>
+                  {data.description || 'No description provided'}
                 </div>
               </div>
-            </div>
 
-            {/* Description Section */}
-            <div 
-              className="p-4 mb-6 border border-blue-200"
-              style={{ backgroundColor: '#eff6ff' }}
-            >
-              <div className="mb-3">
-                <div className="font-bold text-blue-900 text-sm">DESCRIPTION DU LABORATOIRE</div>
-              </div>
-              <div className="text-gray-800 leading-relaxed text-sm bg-white p-3 border border-gray-200">
-                {data.description || 'No description provided'}
-              </div>
-            </div>
-
-            {/* Teams Section */}
-            <div 
-              className="p-4 mb-6 border border-green-200"
-              style={{ backgroundColor: '#f0fdf4' }}
-            >
-              <div className="mb-3">
-                <div className="font-bold text-green-900 text-sm">ÉQUIPES DE RECHERCHE</div>
-              </div>
-              <div className="space-y-3">
-                {data.equipes && data.equipes.length > 0 ? (
-                  data.equipes.map((equipe, index) => (
-                    <div key={index} className="bg-white p-3 border border-gray-200">
-                      <div className="font-semibold text-green-900 text-sm mb-1">
-                        {equipe.name || `Équipe ${index + 1}`}
+              <div style={{
+                marginTop: '12px',
+                padding: '10px',
+                backgroundColor: facultyColors.light,
+                borderLeft: `3px solid ${facultyColors.primary}`,
+                borderRadius: '2px'
+              }}>
+                <div style={{
+                  fontSize: '9px',
+                  fontWeight: 'bold',
+                  color: 'white',
+                  backgroundColor: facultyColors.primary,
+                  padding: '4px 8px',
+                  marginBottom: '8px',
+                  borderRadius: '2px',
+                  display: 'inline-block'
+                }}>
+                  Descriptif des activités de recherche du laboratoire :
+                </div>
+                <div style={{ fontSize: '8px' }}>
+                  {data.equipes && data.equipes.length > 0 ? (
+                    data.equipes.map((equipe, index) => (
+                      <div key={index} style={{ marginBottom: '8px' }}>
+                        <div style={{
+                          fontWeight: 'bold',
+                          color: '#1F2937',
+                          marginBottom: '2px'
+                        }}>
+                          Équipe {index + 1} : {equipe.name || `Équipe ${index + 1}`}
+                        </div>
+                        <div style={{
+                          color: '#4B5563',
+                          marginLeft: '8px',
+                          lineHeight: '1.4',
+                          textAlign: 'justify'
+                        }}>
+                          <span style={{ fontWeight: 'bold' }}>Chef d'équipe {index + 1} :</span> N/A
+                        </div>
+                        {equipe.description && (
+                          <div style={{
+                            color: '#4B5563',
+                            marginLeft: '8px',
+                            marginTop: '3px',
+                            lineHeight: '1.4',
+                            textAlign: 'justify'
+                          }}>
+                            {equipe.description}
+                          </div>
+                        )}
                       </div>
-                      <div className="text-gray-800 text-xs leading-relaxed">
-                        {equipe.description || 'Aucune description fournie'}
-                      </div>
+                    ))
+                  ) : (
+                    <div style={{ color: '#6B7280', fontSize: '8px' }}>
+                      Aucune équipe renseignée
                     </div>
-                  ))
-                ) : (
-                  <div className="bg-white p-3 border border-gray-200 text-gray-500 text-xs">
-                    Aucune équipe renseignée
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
-            </div>
 
-            {/* Footer */}
-            <div className="mt-6 pt-3 border-t border-gray-300">
-              <div className="flex justify-between items-center">
-                <div className="text-xs text-gray-600 font-medium">
-                  Annuaire des Laboratoires de Recherche
+              {data.keywords && (
+                <div style={{
+                  marginTop: '12px',
+                  fontSize: '8px'
+                }}>
+                  <span style={{ fontWeight: 'bold', color: '#374151' }}>Mots-clés :</span>
+                  <span style={{ marginLeft: '4px', color: '#6B7280' }}>{data.keywords}</span>
                 </div>
-                <div className="text-xs text-gray-500">
-                  Généré le: {new Date().toLocaleDateString('fr-FR', { 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric',
-                  })}
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
