@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
-import { FileDown, Eye, Save } from 'lucide-react';
+import { useState, ChangeEvent, FormEvent } from 'react';
+import { Eye, Save } from 'lucide-react';
 
 interface LaboratoryData {
   name: string;
   faculty: string;
   description: string;
   keywords: string;
-  equipes: Array<{ name: string; description: string }>;
+  equipes: Array<{ name: string; description: string; leader: string }>;
   director: string;
   arreteCreation: string;
   code: string;
@@ -27,7 +27,7 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
       faculty: '',
       description: '',
       keywords: '',
-      equipes: [{ name: '', description: '' }],
+      equipes: [{ name: '', description: '', leader: '' }],
       director: '',
       arreteCreation: '',
       code: '',
@@ -36,7 +36,7 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
     }
   );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -44,7 +44,7 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
     }));
   };
 
-  const handleEquipeChange = (index: number, field: 'name' | 'description', value: string) => {
+  const handleEquipeChange = (index: number, field: 'name' | 'description' | 'leader', value: string) => {
     setFormData(prev => ({
       ...prev,
       equipes: prev.equipes.map((equipe, i) => 
@@ -56,7 +56,7 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
   const addEquipe = () => {
     setFormData(prev => ({
       ...prev,
-      equipes: [...prev.equipes, { name: '', description: '' }]
+      equipes: [...prev.equipes, { name: '', description: '', leader: '' }]
     }));
   };
 
@@ -68,7 +68,7 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
       }));
     }
   };
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
   };
@@ -176,32 +176,56 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
             </div>
             <div className="space-y-3">
               {formData.equipes.map((equipe, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
+                <div key={index} className="border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Team name *
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={equipe.name}
+                        onChange={(e) => handleEquipeChange(index, 'name', e.target.value)}
+                        placeholder="Team name"
+                        className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      />
+                      {formData.equipes.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeEquipe(index)}
+                          className="text-red-600 hover:text-red-700 text-sm font-medium"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Chef d'équipe *
+                    </label>
                     <input
                       type="text"
-                      value={equipe.name}
-                      onChange={(e) => handleEquipeChange(index, 'name', e.target.value)}
-                      placeholder="Team name"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                      value={equipe.leader}
+                      onChange={(e) => handleEquipeChange(index, 'leader', e.target.value)}
+                      placeholder="Team leader name"
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                     />
-                    {formData.equipes.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => removeEquipe(index)}
-                        className="text-red-600 hover:text-red-700 text-sm font-medium"
-                      >
-                        Remove
-                      </button>
-                    )}
                   </div>
-                  <textarea
-                    value={equipe.description}
-                    onChange={(e) => handleEquipeChange(index, 'description', e.target.value)}
-                    placeholder="Team description"
-                    rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                  />
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-600 mb-1">
+                      Team description
+                    </label>
+                    <textarea
+                      value={equipe.description}
+                      onChange={(e) => handleEquipeChange(index, 'description', e.target.value)}
+                      placeholder="Team description"
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
                 </div>
               ))}
             </div>

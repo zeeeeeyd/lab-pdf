@@ -1,4 +1,3 @@
-import React from 'react';
 import { FileDown, X } from 'lucide-react';
 
 interface LaboratoryData {
@@ -6,7 +5,7 @@ interface LaboratoryData {
   faculty: string;
   description: string;
   keywords: string;
-  equipes: Array<{ name: string; description: string }>;
+  equipes: Array<{ name: string; description: string; leader: string }>;
   director: string;
   arreteCreation: string;
   code: string;
@@ -17,7 +16,7 @@ interface LaboratoryData {
 interface LaboratoryPreviewProps {
   data: LaboratoryData;
   onClose: () => void;
-  onDownload: () => void;
+  onDownload: () => Promise<void>;
 }
 
 const getFacultyColors = (faculty: string) => {
@@ -62,6 +61,8 @@ const getFacultyColors = (faculty: string) => {
   return colors[faculty] || colors['FSEI'];
 };
 
+const UNIVERSITY_LOGO = '/universite-abdelhamid-logo.png';
+
 export default function LaboratoryPreview({ data, onClose, onDownload }: LaboratoryPreviewProps) {
   const facultyColors = getFacultyColors(data.faculty);
 
@@ -72,7 +73,7 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
           <h2 className="text-2xl font-bold text-gray-800">Laboratory Document Preview</h2>
           <div className="flex gap-3">
             <button
-              onClick={onDownload}
+              onClick={() => { void onDownload(); }}
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <FileDown size={16} />
@@ -88,20 +89,20 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
         </div>
 
         <div className="p-8">
-          <div
-            id="laboratory-document"
-            className="bg-white shadow-lg mx-auto relative"
-            style={{
-              width: '210mm',
-              height: '297mm',
-              padding: '0',
-              fontSize: '9px',
-              lineHeight: '1.3',
-              fontFamily: 'system-ui, -apple-system, sans-serif',
-              background: '#ffffff',
-              overflow: 'hidden'
-            }}
-          >
+            <div
+              id="laboratory-document"
+              className="bg-white shadow-lg mx-auto relative"
+              style={{
+                width: '210mm',
+                height: '297mm',
+                padding: '0',
+                fontSize: '14px',
+                lineHeight: '1.4',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                background: '#ffffff',
+                overflow: 'hidden'
+              }}
+            >
             <div style={{
               position: 'absolute',
               top: 0,
@@ -122,7 +123,7 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '14px',
+                fontSize: '15px',
                 fontWeight: 'bold',
                 color: facultyColors.primary
               }}>
@@ -141,16 +142,34 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
 
             <div style={{ marginLeft: '95px', padding: '25px 25px 25px 15px' }}>
               <div style={{
-                fontSize: '8px',
-                color: facultyColors.text,
-                marginBottom: '6px',
-                fontWeight: '600'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px',
+                marginBottom: '10px'
               }}>
-                {facultyColors.fullName}
+                <div style={{
+                  fontSize: '10px',
+                  color: facultyColors.text,
+                  fontWeight: 600,
+                  lineHeight: 1.4
+                }}>
+                  {facultyColors.fullName}
+                </div>
+                <img
+                  src={UNIVERSITY_LOGO}
+                  alt="Université Abdelhamid Ibn Badis"
+                  crossOrigin="anonymous"
+                  style={{
+                    height: '55px',
+                    objectFit: 'contain',
+                    mixBlendMode: 'multiply'
+                  }}
+                />
               </div>
 
               <h1 style={{
-                fontSize: '16px',
+                fontSize: '18px',
                 fontWeight: 'bold',
                 color: '#1F2937',
                 marginBottom: '12px',
@@ -163,7 +182,7 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
                 display: 'grid',
                 gridTemplateColumns: '1fr 1fr',
                 gap: '6px',
-                fontSize: '8px',
+                fontSize: '9px',
                 marginBottom: '10px'
               }}>
                 <div>
@@ -204,7 +223,7 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
                 borderRadius: '2px'
               }}>
                 <div style={{
-                  fontSize: '9px',
+                  fontSize: '10px',
                   fontWeight: 'bold',
                   color: 'white',
                   backgroundColor: facultyColors.primary,
@@ -216,7 +235,7 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
                   Descriptif des activités de recherche du laboratoire :
                 </div>
                 <div style={{
-                  fontSize: '8px',
+                  fontSize: '9px',
                   color: '#1F2937',
                   lineHeight: '1.5',
                   textAlign: 'justify'
@@ -233,7 +252,7 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
                 borderRadius: '2px'
               }}>
                 <div style={{
-                  fontSize: '9px',
+                  fontSize: '10px',
                   fontWeight: 'bold',
                   color: 'white',
                   backgroundColor: facultyColors.primary,
@@ -242,12 +261,12 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
                   borderRadius: '2px',
                   display: 'inline-block'
                 }}>
-                  Descriptif des activités de recherche du laboratoire :
+                  Organisation des équipes de recherche :
                 </div>
-                <div style={{ fontSize: '8px' }}>
+                <div style={{ fontSize: '9px' }}>
                   {data.equipes && data.equipes.length > 0 ? (
                     data.equipes.map((equipe, index) => (
-                      <div key={index} style={{ marginBottom: '8px' }}>
+                      <div key={index} style={{ marginBottom: '10px' }}>
                         <div style={{
                           fontWeight: 'bold',
                           color: '#1F2937',
@@ -261,23 +280,18 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
                           lineHeight: '1.4',
                           textAlign: 'justify'
                         }}>
-                          <span style={{ fontWeight: 'bold' }}>Chef d'équipe {index + 1} :</span> N/A
+                          <span style={{ fontWeight: 'bold' }}>Chef d'équipe :</span>
+                          <span style={{ marginLeft: '4px' }}>{equipe.leader || 'Non renseigné'}</span>
+                          {equipe.description && (
+                            <div style={{ marginTop: '3px' }}>
+                              {equipe.description}
+                            </div>
+                          )}
                         </div>
-                        {equipe.description && (
-                          <div style={{
-                            color: '#4B5563',
-                            marginLeft: '8px',
-                            marginTop: '3px',
-                            lineHeight: '1.4',
-                            textAlign: 'justify'
-                          }}>
-                            {equipe.description}
-                          </div>
-                        )}
                       </div>
                     ))
                   ) : (
-                    <div style={{ color: '#6B7280', fontSize: '8px' }}>
+                    <div style={{ color: '#6B7280', fontSize: '9px' }}>
                       Aucune équipe renseignée
                     </div>
                   )}
@@ -287,7 +301,7 @@ export default function LaboratoryPreview({ data, onClose, onDownload }: Laborat
               {data.keywords && (
                 <div style={{
                   marginTop: '12px',
-                  fontSize: '8px'
+                  fontSize: '9px'
                 }}>
                   <span style={{ fontWeight: 'bold', color: '#374151' }}>Mots-clés :</span>
                   <span style={{ marginLeft: '4px', color: '#6B7280' }}>{data.keywords}</span>

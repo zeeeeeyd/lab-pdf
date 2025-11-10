@@ -1,4 +1,3 @@
-import React from 'react';
 import { Eye, Trash2, CreditCard as Edit } from 'lucide-react';
 
 interface LaboratoryData {
@@ -7,7 +6,7 @@ interface LaboratoryData {
   faculty: string;
   description: string;
   keywords: string;
-  equipes: Array<{ name: string; description: string }>;
+  equipes: Array<{ name: string; description: string; leader: string }>;
   director: string;
   arreteCreation: string;
   code: string;

@@ -1,8 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FlaskConical, Plus } from 'lucide-react';
+import html2canvas from 'html2canvas';
+import { jsPDF } from 'jspdf';
 import LaboratoryForm from './components/LaboratoryForm';
 import LaboratoryPreview from './components/LaboratoryPreview';
 import LaboratoryList from './components/LaboratoryList';
+
+interface EquipeData {
+  name: string;
+  description: string;
+  leader: string;
+}
 
 interface LaboratoryData {
   id: string;
@@ -10,7 +18,7 @@ interface LaboratoryData {
   faculty: string;
   description: string;
   keywords: string;
-  equipes: Array<{ name: string; description: string }>;
+  equipes: EquipeData[];
   director: string;
   arreteCreation: string;
   code: string;
@@ -20,6 +28,13 @@ interface LaboratoryData {
 }
 
 type FormData = Omit<LaboratoryData, 'id' | 'createdAt'>;
+
+const ensureEquipeStructure = (equipes: Array<Partial<EquipeData>> = []): EquipeData[] =>
+  equipes.map((equipe) => ({
+    name: equipe?.name || '',
+    description: equipe?.description || '',
+    leader: equipe?.leader || ''
+  }));
 
 function App() {
   const [laboratories, setLaboratories] = useState<LaboratoryData[]>([]);
@@ -31,7 +46,15 @@ function App() {
   useEffect(() => {
     const savedLabs = localStorage.getItem('laboratories');
     if (savedLabs) {
-      setLaboratories(JSON.parse(savedLabs));
+      try {
+        const parsed: LaboratoryData[] = JSON.parse(savedLabs);
+        setLaboratories(parsed.map((lab) => ({
+          ...lab,
+          equipes: ensureEquipeStructure(lab.equipes || [])
+        })));
+      } catch (error) {
+        console.error('Unable to parse saved laboratories', error);
+      }
     }
   }, []);
 
@@ -46,7 +69,7 @@ function App() {
       setLaboratories(prev => 
         prev.map(lab => 
           lab.id === editingLab.id 
-            ? { ...lab, ...formData }
+            ? { ...lab, ...formData, equipes: ensureEquipeStructure(formData.equipes) }
             : lab
         )
       );
@@ -55,6 +78,7 @@ function App() {
       // Create new laboratory
       const newLab: LaboratoryData = {
         ...formData,
+        equipes: ensureEquipeStructure(formData.equipes),
         id: Date.now().toString(),
         createdAt: new Date().toISOString(),
       };
@@ -73,31 +97,37 @@ function App() {
     setPreviewData(null);
   };
 
-  const handleDownload = () => {
-    const printWindow = window.open('', '_blank');
-    if (printWindow) {
-      const documentContent = document.getElementById('laboratory-document');
-      if (documentContent) {
-        printWindow.document.write(`
-          <!DOCTYPE html>
-          <html>
-            <head>
-              <title>Laboratory Document</title>
-              <style>
-                body { margin: 0; padding: 20px; font-family: system-ui, -apple-system, sans-serif; }
-                @page { size: A4; margin: 0; }
-                @media print { body { margin: 0; } }
-                .no-print { display: none !important; }
-              </style>
-            </head>
-            <body>
-              ${documentContent.outerHTML}
-            </body>
-          </html>
-        `);
-        printWindow.document.close();
-        printWindow.print();
-      }
+  const handleDownload = async () => {
+    const documentContent = document.getElementById('laboratory-document');
+
+    if (!(documentContent instanceof HTMLElement)) {
+      alert('No document available for download.');
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(documentContent, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+      const sanitizedName = (previewData?.name?.trim() || 'laboratoire')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '') || 'laboratoire';
+
+      pdf.save(`${sanitizedName}.pdf`);
+    } catch (error) {
+      console.error('Failed to generate PDF', error);
+      alert('La génération du PDF a échoué. Veuillez réessayer.');
     }
   };
 
@@ -176,7 +206,7 @@ function App() {
                   faculty: editingLab.faculty,
                   description: editingLab.description,
                   keywords: editingLab.keywords,
-                  equipes: editingLab.equipes,
+                  equipes: ensureEquipeStructure(editingLab.equipes),
                   director: editingLab.director,
                   arreteCreation: editingLab.arreteCreation,
                   code: editingLab.code,
