@@ -1,6 +1,27 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
 import { Eye, Save } from 'lucide-react';
 
+const FACULTIES = [
+  { value: 'FSNV', label: 'FSNV - Faculte des Sciences de la Nature et de la Vie' },
+  { value: 'FST', label: 'FST - Faculte des Sciences et Technologies' },
+  { value: 'FMED', label: 'FMED - Faculte de Medecine' },
+  { value: 'IESP', label: 'IESP - Institut d\'Education Physique et Sportive' },
+  { value: 'FSESCSG', label: 'FSESCSG - Faculte des Sciences Economiques Commerciales et des Sciences de Gestion' },
+  { value: 'FSS', label: 'FSS - Faculte des Sciences Sociales' },
+  { value: 'FLAA', label: 'FLAA - Faculte de Litterature Arabe et des Arts' },
+  { value: 'FDSP', label: 'FDSP - Faculte de Droit et de Science Politique' },
+  { value: 'FLE', label: 'FLE - Faculte des Langues Etrangeres' },
+  { value: 'FSEI', label: 'FSEI - Faculte des Sciences Exactes et Informatique' },
+] as const;
+
+const normalizeFacultyValue = (value: string) => {
+  const legacyMap: Record<string, string> = {
+    MEDECINE: 'FMED',
+  };
+
+  return legacyMap[value] || value;
+};
+
 interface LaboratoryData {
   name: string;
   faculty: string;
@@ -12,6 +33,10 @@ interface LaboratoryData {
   code: string;
   domiciliation: string;
   agenceThematique: string;
+  email: string;
+  phone: string;
+  directorAppointmentDate: string;
+  language: 'fr' | 'ar';
 }
 
 interface LaboratoryFormProps {
@@ -22,18 +47,24 @@ interface LaboratoryFormProps {
 
 export default function LaboratoryForm({ onSubmit, onPreview, initialData }: LaboratoryFormProps) {
   const [formData, setFormData] = useState<LaboratoryData>(
-    initialData || {
-      name: '',
-      faculty: '',
-      description: '',
-      keywords: '',
-      equipes: [{ name: '', description: '', leader: '' }],
-      director: '',
-      arreteCreation: '',
-      code: '',
-      domiciliation: '',
-      agenceThematique: '',
-    }
+    initialData
+      ? { ...initialData, faculty: normalizeFacultyValue(initialData.faculty) }
+      : {
+          name: '',
+          faculty: '',
+          description: '',
+          keywords: '',
+          equipes: [{ name: '', description: '', leader: '' }],
+          director: '',
+          arreteCreation: '',
+          code: '',
+          domiciliation: '',
+          agenceThematique: '',
+          email: '',
+          phone: '',
+          directorAppointmentDate: '',
+          language: 'fr',
+        }
   );
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -122,12 +153,73 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             >
               <option value="">Select a faculty</option>
-              <option value="FSEI">FSEI - Faculty of Exact Sciences and Computer Science</option>
-              <option value="FLE">FLE - Faculty of Letters and Languages</option>
-              <option value="MEDECINE">MEDECINE - Faculty of Medicine</option>
-              <option value="FST">FST - Faculty of Science and Technology</option>
-              <option value="FDSP">FDSP - Faculty of Law and Political Science</option>
+              {FACULTIES.map((faculty) => (
+                <option key={faculty.value} value={faculty.value}>
+                  {faculty.label}
+                </option>
+              ))}
+              {formData.faculty && !FACULTIES.some((faculty) => faculty.value === formData.faculty) && (
+                <option value={formData.faculty}>{formData.faculty}</option>
+              )}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="contact@university.dz"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Telephone
+            </label>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="+213 00 00 00 00"
+            />
+          </div>
+        </div>
+
+        <div>
+          <span className="block text-sm font-medium text-gray-700 mb-2">
+            Langue du document
+          </span>
+          <div className="flex flex-wrap gap-4">
+            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="language"
+                value="fr"
+                checked={formData.language === 'fr'}
+                onChange={handleChange}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              Francais
+            </label>
+            <label className="inline-flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="radio"
+                name="language"
+                value="ar"
+                checked={formData.language === 'ar'}
+                onChange={handleChange}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              Arabe
+            </label>
           </div>
         </div>
 
@@ -235,25 +327,38 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
         <div className="border-t pt-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Administrative Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Director *
-              </label>
-              <input
-                type="text"
-                name="director"
-                value={formData.director}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-                placeholder="Enter director name"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Director *
+            </label>
+            <input
+              type="text"
+              name="director"
+              value={formData.director}
+              onChange={handleChange}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+              placeholder="Enter director name"
+            />
+          </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Code *
-              </label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Date de nomination du directeur
+            </label>
+            <input
+              type="date"
+              name="directorAppointmentDate"
+              value={formData.directorAppointmentDate}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Code *
+            </label>
               <input
                 type="text"
                 name="code"

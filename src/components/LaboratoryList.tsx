@@ -12,6 +12,10 @@ interface LaboratoryData {
   code: string;
   domiciliation: string;
   agenceThematique: string;
+  email: string;
+  phone: string;
+  directorAppointmentDate: string;
+  language: 'fr' | 'ar';
   createdAt: string;
 }
 

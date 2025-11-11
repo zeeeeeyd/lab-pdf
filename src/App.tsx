@@ -24,6 +24,10 @@ interface LaboratoryData {
   code: string;
   domiciliation: string;
   agenceThematique: string;
+  email: string;
+  phone: string;
+  directorAppointmentDate: string;
+  language: 'fr' | 'ar';
   createdAt: string;
 }
 
@@ -50,7 +54,11 @@ function App() {
         const parsed: LaboratoryData[] = JSON.parse(savedLabs);
         setLaboratories(parsed.map((lab) => ({
           ...lab,
-          equipes: ensureEquipeStructure(lab.equipes || [])
+          equipes: ensureEquipeStructure(lab.equipes || []),
+          email: lab.email || '',
+          phone: lab.phone || '',
+          directorAppointmentDate: lab.directorAppointmentDate || '',
+          language: lab.language === 'ar' ? 'ar' : 'fr'
         })));
       } catch (error) {
         console.error('Unable to parse saved laboratories', error);
@@ -212,6 +220,10 @@ function App() {
                   code: editingLab.code,
                   domiciliation: editingLab.domiciliation,
                   agenceThematique: editingLab.agenceThematique,
+                  email: editingLab.email || '',
+                  phone: editingLab.phone || '',
+                  directorAppointmentDate: editingLab.directorAppointmentDate || '',
+                  language: editingLab.language || 'fr',
                 } : undefined}
               />
             </div>
