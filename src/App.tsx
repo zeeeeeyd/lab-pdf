@@ -271,6 +271,7 @@ function App() {
           cursorY += blockHeight;
 
           if (lineIndex < bodyLines.length) {
+            cursorY += 1;
             startPage();
           } else {
             cursorY += 5;
