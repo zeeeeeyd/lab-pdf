@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { FlaskConical, Plus } from 'lucide-react';
-import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import LaboratoryForm from './components/LaboratoryForm';
 import LaboratoryPreview from './components/LaboratoryPreview';
 import LaboratoryList from './components/LaboratoryList';
+import { getFacultyColors } from './utils/facultyColors';
 
 interface EquipeData {
   name: string;
@@ -106,28 +106,312 @@ function App() {
   };
 
   const handleDownload = async () => {
-    const documentContent = document.getElementById('laboratory-document');
-
-    if (!(documentContent instanceof HTMLElement)) {
+    if (!previewData) {
       alert('No document available for download.');
       return;
     }
 
     try {
-      const canvas = await html2canvas(documentContent, {
-        scale: 2,
-        useCORS: true,
-        backgroundColor: '#ffffff'
-      });
+      const loadImageAsDataUrl = async (path: string) => {
+        const response = await fetch(path);
+        if (!response.ok) {
+          throw new Error(`Unable to load image at ${path}`);
+        }
+        const blob = await response.blob();
+        return await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            if (typeof reader.result === 'string') {
+              resolve(reader.result);
+            } else {
+              reject(new Error('Failed to read image data'));
+            }
+          };
+          reader.onerror = () => reject(reader.error || new Error('Failed to read image data'));
+          reader.readAsDataURL(blob);
+        });
+      };
 
-      const imgData = canvas.toDataURL('image/png');
+      const facultyColors = getFacultyColors(previewData.faculty);
+      const logoDataUrl = await loadImageAsDataUrl('/universite-abdelhamid-logo.png').catch(() => null);
       const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const bandWidth = 22;
+      const safeMarginTop = 18;
+      const safeMarginBottom = 22;
+      const contentLeft = bandWidth + 12;
+      const contentRightMargin = 12;
+      const contentWidth = pageWidth - contentLeft - contentRightMargin;
+      const lineHeight = 5;
 
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+      const hexToRgb = (hex: string): [number, number, number] => {
+        const normalized = hex.replace('#', '');
+        const bigint = parseInt(normalized, 16);
+        return [
+          (bigint >> 16) & 255,
+          (bigint >> 8) & 255,
+          bigint & 255
+        ];
+      };
 
-      const sanitizedName = (previewData?.name?.trim() || 'laboratoire')
+      const primaryRgb = hexToRgb(facultyColors.primary);
+      const lightRgb = hexToRgb(facultyColors.light);
+      const textRgb: [number, number, number] = [31, 41, 55];
+      const mutedRgb: [number, number, number] = [107, 114, 128];
+
+      const setTextColor = (rgb: [number, number, number]) => {
+        pdf.setTextColor(rgb[0], rgb[1], rgb[2]);
+      };
+
+      let cursorY = safeMarginTop;
+
+      const drawPageChrome = () => {
+        pdf.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
+        pdf.rect(0, 0, bandWidth, pageHeight, 'F');
+
+        pdf.setFillColor(255, 255, 255);
+        pdf.circle(bandWidth / 2, safeMarginTop - 5, 10, 'F');
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(12);
+        setTextColor(primaryRgb);
+        pdf.text(facultyColors.abbr, bandWidth / 2, safeMarginTop - 2.5, { align: 'center' });
+
+        pdf.setDrawColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
+        pdf.setLineWidth(0.6);
+        pdf.line(bandWidth + 4, safeMarginTop - 6, bandWidth + 4, pageHeight - safeMarginBottom + 6);
+
+        if (logoDataUrl) {
+          const logoWidth = 26;
+          const logoHeight = 26;
+          pdf.addImage(
+            logoDataUrl,
+            'PNG',
+            pageWidth - logoWidth - contentRightMargin,
+            safeMarginTop - 10,
+            logoWidth,
+            logoHeight
+          );
+        }
+      };
+
+      const startPage = (isFirst = false) => {
+        if (!isFirst) {
+          pdf.addPage();
+        }
+        drawPageChrome();
+        cursorY = safeMarginTop;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(10);
+        setTextColor(textRgb);
+      };
+
+      const ensureSpace = (heightNeeded: number) => {
+        if (cursorY + heightNeeded <= pageHeight - safeMarginBottom) {
+          return;
+        }
+        startPage();
+      };
+
+      const addSectionBlock = (title: string, body: string) => {
+        const normalizedBody = body?.trim() ? body : 'Non renseigné';
+        const cardPadding = 4;
+        const headerHeight = 6.5;
+        const innerWidth = contentWidth - cardPadding * 2;
+        const bodyLines = pdf.splitTextToSize(normalizedBody, innerWidth);
+        let lineIndex = 0;
+        let isFirstChunk = true;
+
+        while (lineIndex < bodyLines.length) {
+          const structuralHeight = cardPadding * 2 + (isFirstChunk ? headerHeight + 2 : 0);
+          const availableHeight = pageHeight - safeMarginBottom - cursorY;
+          const usableHeight = availableHeight - structuralHeight;
+
+          if (usableHeight < lineHeight) {
+            startPage();
+            continue;
+          }
+
+          const maxLines = Math.max(1, Math.floor(usableHeight / lineHeight));
+          const chunkLines = bodyLines.slice(lineIndex, lineIndex + maxLines);
+          lineIndex += chunkLines.length;
+          const blockHeight = structuralHeight + chunkLines.length * lineHeight;
+
+          pdf.setFillColor(lightRgb[0], lightRgb[1], lightRgb[2]);
+          pdf.rect(contentLeft, cursorY, contentWidth, blockHeight, 'F');
+
+          if (isFirstChunk) {
+            pdf.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
+            pdf.rect(
+              contentLeft + cardPadding,
+              cursorY + cardPadding,
+              contentWidth - cardPadding * 2,
+              headerHeight,
+              'F'
+            );
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(10);
+            pdf.setTextColor(255, 255, 255);
+            pdf.text(
+              title,
+              contentLeft + cardPadding + 1.5,
+              cursorY + cardPadding + headerHeight - 1
+            );
+          }
+
+          setTextColor(textRgb);
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(10);
+          const textStartY = cursorY + cardPadding + (isFirstChunk ? headerHeight + 3 : 3);
+          pdf.text(chunkLines, contentLeft + cardPadding, textStartY);
+
+          cursorY += blockHeight;
+
+          if (lineIndex < bodyLines.length) {
+            startPage();
+          } else {
+            cursorY += 3;
+          }
+
+          isFirstChunk = false;
+        }
+      };
+
+      const addTeamsSection = () => {
+        const teams = previewData.equipes || [];
+        if (teams.length === 0) {
+          addSectionBlock('Organisation des équipes de recherche :', 'Aucune équipe renseignée');
+          return;
+        }
+
+        const teamsText = teams
+          .map((team, index) => {
+            const name = team.name?.trim() || `Équipe ${index + 1}`;
+            const leader = team.leader?.trim() || 'Non renseigné';
+            const description = team.description?.trim();
+            const descriptionPart = description ? `\n${description}` : '';
+            return `Équipe ${index + 1} : ${name}\nChef d'équipe : ${leader}${descriptionPart}`;
+          })
+          .join('\n\n');
+
+        addSectionBlock('Organisation des équipes de recherche :', teamsText);
+      };
+
+      const addKeywords = () => {
+        if (!previewData.keywords?.trim()) {
+          return;
+        }
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        ensureSpace(lineHeight * 2);
+        pdf.text('Mots-clés :', contentLeft, cursorY);
+        pdf.setFont('helvetica', 'normal');
+        const keywordLines = pdf.splitTextToSize(previewData.keywords, contentWidth - 20);
+        pdf.text(keywordLines, contentLeft + 20, cursorY);
+        cursorY += keywordLines.length * lineHeight + 2;
+      };
+
+      startPage(true);
+
+      // Header information
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(11);
+      setTextColor(textRgb);
+      const facultyLines = pdf.splitTextToSize(facultyColors.fullName, contentWidth);
+      ensureSpace(facultyLines.length * lineHeight + 10);
+      pdf.text(facultyLines, contentLeft, cursorY);
+      cursorY += facultyLines.length * lineHeight + 2;
+
+      pdf.setFontSize(18);
+      pdf.text(previewData.name || 'N/A', contentLeft, cursorY + 6);
+      cursorY += 12;
+
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(10);
+      setTextColor(mutedRgb);
+      pdf.text(`Faculté : ${previewData.faculty}`, contentLeft, cursorY);
+      cursorY += 6;
+      setTextColor(textRgb);
+
+      const leftColumnRows = [
+        { label: 'Arrêté de création', value: previewData.arreteCreation },
+        { label: 'Domiciliation', value: previewData.domiciliation },
+        { label: 'Directeur', value: previewData.director },
+        { label: 'Tel', value: previewData.phone }
+      ];
+
+      const rightColumnRows = [
+        { label: 'Code', value: previewData.code },
+        { label: 'Agence thématique de rattachement', value: previewData.agenceThematique },
+        { label: 'E-mail', value: previewData.email },
+        { label: 'Date de nomination du directeur', value: previewData.directorAppointmentDate }
+      ];
+
+      const columnGap = 12;
+      const infoColumnWidth = (contentWidth - columnGap) / 2;
+
+      const measureInfoRow = (
+        row: { label: string; value?: string },
+        columnWidth: number
+      ) => {
+        const labelText = `${row.label} : `;
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        const labelWidth = pdf.getTextWidth(labelText);
+        const valueText = row.value?.trim() ? row.value : 'N/A';
+        const availableWidth = Math.max(columnWidth - labelWidth - 2, 20);
+        pdf.setFont('helvetica', 'normal');
+        const lines = pdf.splitTextToSize(valueText, availableWidth);
+        const height = Math.max(lineHeight, lines.length * lineHeight);
+        return { labelText, labelWidth, lines, height };
+      };
+
+      const renderInfoRow = (
+        columnX: number,
+        metrics: ReturnType<typeof measureInfoRow>,
+        rowTop: number
+      ) => {
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(10);
+        pdf.text(metrics.labelText, columnX, rowTop + lineHeight);
+        pdf.setFont('helvetica', 'normal');
+        metrics.lines.forEach((line, idx) => {
+          const lineY = rowTop + lineHeight + idx * lineHeight;
+          pdf.text(line, columnX + metrics.labelWidth + 1, lineY);
+        });
+      };
+
+      const renderInfoGrid = () => {
+        const totalRows = Math.max(leftColumnRows.length, rightColumnRows.length);
+        for (let i = 0; i < totalRows; i++) {
+          const leftRow = leftColumnRows[i];
+          const rightRow = rightColumnRows[i];
+          const leftMetrics = leftRow ? measureInfoRow(leftRow, infoColumnWidth) : null;
+          const rightMetrics = rightRow ? measureInfoRow(rightRow, infoColumnWidth) : null;
+          const rowHeight = Math.max(leftMetrics?.height || 0, rightMetrics?.height || 0, lineHeight);
+          ensureSpace(rowHeight + 2);
+          if (leftMetrics) {
+            renderInfoRow(contentLeft, leftMetrics, cursorY);
+          }
+          if (rightMetrics) {
+            renderInfoRow(contentLeft + infoColumnWidth + columnGap, rightMetrics, cursorY);
+          }
+          cursorY += rowHeight + 2;
+        }
+        cursorY += 4;
+      };
+
+      renderInfoGrid();
+
+      addSectionBlock(
+        'Descriptif des activités de recherche du laboratoire :',
+        previewData.description || 'No description provided'
+      );
+
+      addTeamsSection();
+      addKeywords();
+
+      const sanitizedName = (previewData.name?.trim() || 'laboratoire')
         .toLowerCase()
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/^-+|-+$/g, '') || 'laboratoire';
@@ -135,7 +419,7 @@ function App() {
       pdf.save(`${sanitizedName}.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF', error);
-      alert('La génération du PDF a échoué. Veuillez réessayer.');
+      alert('La generation du PDF a echoue. Veuillez reessayer.');
     }
   };
 
