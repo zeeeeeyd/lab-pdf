@@ -143,7 +143,11 @@ function App() {
       const contentLeft = bandWidth + 12;
       const contentRightMargin = 12;
       const contentWidth = pageWidth - contentLeft - contentRightMargin;
-      const lineHeight = 5;
+      const defaultFontSize = 10;
+      const pointsToMillimeters = 25.4 / 72;
+      const getLineHeight = (fontSize = defaultFontSize) =>
+        pdf.getLineHeightFactor() * fontSize * pointsToMillimeters;
+      const lineHeight = getLineHeight();
 
       const hexToRgb = (hex: string): [number, number, number] => {
         const normalized = hex.replace('#', '');
@@ -204,7 +208,7 @@ function App() {
         drawPageChrome(currentPageNumber === 0);
         cursorY = safeMarginTop;
         pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(10);
+        pdf.setFontSize(defaultFontSize);
         setTextColor(textRgb);
       };
 
@@ -253,7 +257,7 @@ function App() {
               'F'
             );
             pdf.setFont('helvetica', 'bold');
-            pdf.setFontSize(10);
+            pdf.setFontSize(defaultFontSize);
             pdf.setTextColor(255, 255, 255);
             pdf.text(
               title,
@@ -264,7 +268,7 @@ function App() {
 
           setTextColor(textRgb);
           pdf.setFont('helvetica', 'normal');
-          pdf.setFontSize(10);
+          pdf.setFontSize(defaultFontSize);
           const textStartY = cursorY + cardPadding + (isFirstChunk ? headerHeight + titleContentGap + 1 : 3);
           pdf.text(chunkLines, contentLeft + cardPadding, textStartY);
 
@@ -306,10 +310,11 @@ function App() {
           return;
         }
         pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(10);
+        pdf.setFontSize(defaultFontSize);
         ensureSpace(lineHeight * 2);
         pdf.text('Mots-clés :', contentLeft, cursorY);
         pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(defaultFontSize);
         const keywordLines = pdf.splitTextToSize(previewData.keywords, contentWidth - 20);
         pdf.text(keywordLines, contentLeft + 20, cursorY);
         cursorY += keywordLines.length * lineHeight + 2;
@@ -331,7 +336,7 @@ function App() {
       cursorY += 12;
 
       pdf.setFont('helvetica', 'normal');
-      pdf.setFontSize(10);
+      pdf.setFontSize(defaultFontSize);
       setTextColor(mutedRgb);
       pdf.text(`Faculté : ${previewData.faculty}`, contentLeft, cursorY);
       cursorY += 6;
@@ -360,11 +365,12 @@ function App() {
       ) => {
         const labelText = `${row.label} : `;
         pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(10);
+        pdf.setFontSize(defaultFontSize);
         const labelWidth = pdf.getTextWidth(labelText);
         const valueText = row.value?.trim() ? row.value : 'N/A';
         const availableWidth = Math.max(columnWidth - labelWidth - 2, 20);
         pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(defaultFontSize);
         const lines = pdf.splitTextToSize(valueText, availableWidth);
         const height = Math.max(lineHeight, lines.length * lineHeight);
         return { labelText, labelWidth, lines, height };
@@ -376,9 +382,10 @@ function App() {
         rowTop: number
       ) => {
         pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(10);
+        pdf.setFontSize(defaultFontSize);
         pdf.text(metrics.labelText, columnX, rowTop + lineHeight);
         pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(defaultFontSize);
         metrics.lines.forEach((line, idx) => {
           const lineY = rowTop + lineHeight + idx * lineHeight;
           pdf.text(line, columnX + metrics.labelWidth + 1, lineY);
