@@ -248,21 +248,22 @@ function App() {
           pdf.rect(contentLeft, cursorY, contentWidth, blockHeight, 'F');
 
           if (isFirstChunk) {
-            pdf.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
-            pdf.rect(
-              contentLeft + cardPadding,
-              cursorY + cardPadding,
-              contentWidth - cardPadding * 2,
-              headerHeight,
-              'F'
-            );
             pdf.setFont('helvetica', 'bold');
             pdf.setFontSize(defaultFontSize);
+            const headerX = contentLeft + cardPadding;
+            const headerY = cursorY + cardPadding;
+            const textPaddingX = 3;
+            const maxHeaderWidth = contentWidth - cardPadding * 2;
+            const measuredTextWidth = pdf.getTextWidth(title);
+            const headerWidth = Math.min(maxHeaderWidth, measuredTextWidth + textPaddingX * 2);
+            pdf.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
+            pdf.roundedRect(headerX, headerY, headerWidth, headerHeight, 1.5, 1.5, 'F');
             pdf.setTextColor(255, 255, 255);
             pdf.text(
               title,
-              contentLeft + cardPadding + 1.5,
-              cursorY + cardPadding + headerHeight - 1
+              headerX + textPaddingX,
+              headerY + headerHeight / 2,
+              { baseline: 'middle' }
             );
           }
 
