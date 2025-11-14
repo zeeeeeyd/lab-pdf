@@ -165,8 +165,9 @@ function App() {
       };
 
       let cursorY = safeMarginTop;
+      let currentPageNumber = 0;
 
-      const drawPageChrome = () => {
+      const drawPageChrome = (isFirstPage: boolean) => {
         pdf.setFillColor(primaryRgb[0], primaryRgb[1], primaryRgb[2]);
         pdf.rect(0, 0, bandWidth, pageHeight, 'F');
 
@@ -181,7 +182,7 @@ function App() {
         pdf.setLineWidth(0.6);
         pdf.line(bandWidth + 4, safeMarginTop - 6, bandWidth + 4, pageHeight - safeMarginBottom + 6);
 
-        if (logoDataUrl) {
+        if (logoDataUrl && isFirstPage) {
           const logoWidth = 26;
           const logoHeight = 26;
           pdf.addImage(
@@ -198,8 +199,9 @@ function App() {
       const startPage = (isFirst = false) => {
         if (!isFirst) {
           pdf.addPage();
+          currentPageNumber++;
         }
-        drawPageChrome();
+        drawPageChrome(currentPageNumber === 0);
         cursorY = safeMarginTop;
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(10);
@@ -217,13 +219,14 @@ function App() {
         const normalizedBody = body?.trim() ? body : 'Non renseigné';
         const cardPadding = 4;
         const headerHeight = 6.5;
+        const titleContentGap = 4;
         const innerWidth = contentWidth - cardPadding * 2;
         const bodyLines = pdf.splitTextToSize(normalizedBody, innerWidth);
         let lineIndex = 0;
         let isFirstChunk = true;
 
         while (lineIndex < bodyLines.length) {
-          const structuralHeight = cardPadding * 2 + (isFirstChunk ? headerHeight + 2 : 0);
+          const structuralHeight = cardPadding * 2 + (isFirstChunk ? headerHeight + titleContentGap : 0);
           const availableHeight = pageHeight - safeMarginBottom - cursorY;
           const usableHeight = availableHeight - structuralHeight;
 
@@ -262,7 +265,7 @@ function App() {
           setTextColor(textRgb);
           pdf.setFont('helvetica', 'normal');
           pdf.setFontSize(10);
-          const textStartY = cursorY + cardPadding + (isFirstChunk ? headerHeight + 3 : 3);
+          const textStartY = cursorY + cardPadding + (isFirstChunk ? headerHeight + titleContentGap + 1 : 3);
           pdf.text(chunkLines, contentLeft + cardPadding, textStartY);
 
           cursorY += blockHeight;
@@ -270,7 +273,7 @@ function App() {
           if (lineIndex < bodyLines.length) {
             startPage();
           } else {
-            cursorY += 3;
+            cursorY += 5;
           }
 
           isFirstChunk = false;
