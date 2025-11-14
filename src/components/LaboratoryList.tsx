@@ -5,6 +5,7 @@ interface LaboratoryData {
   name: string;
   faculty: string;
   description: string;
+  labLogo: string;
   keywords: string;
   equipes: Array<{ name: string; description: string; leader: string }>;
   director: string;

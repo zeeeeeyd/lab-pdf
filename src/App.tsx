@@ -17,6 +17,7 @@ interface LaboratoryData {
   name: string;
   faculty: string;
   description: string;
+  labLogo: string;
   keywords: string;
   equipes: EquipeData[];
   director: string;
@@ -58,7 +59,8 @@ function App() {
           email: lab.email || '',
           phone: lab.phone || '',
           directorAppointmentDate: lab.directorAppointmentDate || '',
-          language: lab.language === 'ar' ? 'ar' : 'fr'
+          language: lab.language === 'ar' ? 'ar' : 'fr',
+          labLogo: lab.labLogo || ''
         })));
       } catch (error) {
         console.error('Unable to parse saved laboratories', error);
@@ -133,7 +135,23 @@ function App() {
       };
 
       const facultyColors = getFacultyColors(previewData.faculty);
-      const logoDataUrl = await loadImageAsDataUrl('/universite-abdelhamid-logo.png').catch(() => null);
+      const universityLogoDataUrl = await loadImageAsDataUrl('/universite-abdelhamid-logo.png').catch(() => null);
+      type ImageFormat = 'PNG' | 'JPEG';
+      const getImageFormat = (dataUrl?: string | null): ImageFormat | null => {
+        if (!dataUrl?.startsWith('data:image/')) {
+          return null;
+        }
+        const match = dataUrl.match(/^data:image\/(png|jpe?g)/i);
+        if (!match) {
+          return null;
+        }
+        const format = match[1].toUpperCase();
+        return (format === 'JPG' ? 'JPEG' : format) as ImageFormat;
+      };
+      const labLogoDataUrl = previewData.labLogo?.startsWith('data:image/')
+        ? previewData.labLogo
+        : null;
+      const labLogoFormat = getImageFormat(labLogoDataUrl);
       const pdf = new jsPDF('p', 'mm', 'a4');
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
@@ -186,17 +204,31 @@ function App() {
         pdf.setLineWidth(0.6);
         pdf.line(bandWidth + 4, safeMarginTop - 6, bandWidth + 4, pageHeight - safeMarginBottom + 6);
 
-        if (logoDataUrl && isFirstPage) {
-          const logoWidth = 26;
-          const logoHeight = 26;
-          pdf.addImage(
-            logoDataUrl,
-            'PNG',
-            pageWidth - logoWidth - contentRightMargin,
-            safeMarginTop - 10,
-            logoWidth,
-            logoHeight
-          );
+        if (isFirstPage) {
+          const logos: Array<{ data: string; format: ImageFormat; width: number; height: number }> = [];
+          if (labLogoDataUrl && labLogoFormat) {
+            logos.push({ data: labLogoDataUrl, format: labLogoFormat, width: 22, height: 22 });
+          }
+          if (universityLogoDataUrl) {
+            logos.push({ data: universityLogoDataUrl, format: 'PNG', width: 26, height: 26 });
+          }
+          if (logos.length) {
+            let currentX = pageWidth - contentRightMargin;
+            logos.forEach((logo, index) => {
+              const logoWidth = logo.width;
+              const logoHeight = logo.height;
+              currentX -= logoWidth;
+              pdf.addImage(
+                logo.data,
+                logo.format,
+                currentX,
+                safeMarginTop - 10,
+                logoWidth,
+                logoHeight
+              );
+              currentX -= 4;
+            });
+          }
         }
       };
 
@@ -509,6 +541,7 @@ function App() {
                   name: editingLab.name,
                   faculty: editingLab.faculty,
                   description: editingLab.description,
+                  labLogo: editingLab.labLogo || '',
                   keywords: editingLab.keywords,
                   equipes: ensureEquipeStructure(editingLab.equipes),
                   director: editingLab.director,

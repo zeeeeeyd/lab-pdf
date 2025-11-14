@@ -26,6 +26,7 @@ interface LaboratoryData {
   name: string;
   faculty: string;
   description: string;
+  labLogo: string;
   keywords: string;
   equipes: Array<{ name: string; description: string; leader: string }>;
   director: string;
@@ -53,6 +54,7 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
           name: '',
           faculty: '',
           description: '',
+          labLogo: '',
           keywords: '',
           equipes: [{ name: '', description: '', leader: '' }],
           director: '',
@@ -99,6 +101,32 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
       }));
     }
   };
+
+  const handleLogoUpload = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      if (typeof reader.result === 'string') {
+        setFormData(prev => ({
+          ...prev,
+          labLogo: reader.result
+        }));
+      }
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
+  };
+
+  const handleLogoRemove = () => {
+    setFormData(prev => ({
+      ...prev,
+      labLogo: ''
+    }));
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     onSubmit(formData);
@@ -191,6 +219,50 @@ export default function LaboratoryForm({ onSubmit, onPreview, initialData }: Lab
               placeholder="+213 00 00 00 00"
             />
           </div>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Logo du laboratoire
+          </label>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="w-24 h-24 rounded-lg border border-dashed border-gray-300 flex items-center justify-center bg-gray-50 overflow-hidden">
+              {formData.labLogo ? (
+                <img
+                  src={formData.labLogo}
+                  alt="Logo du laboratoire"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="text-xs text-gray-400 text-center px-2">
+                  Aucun logo
+                </span>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <label className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg text-sm font-medium text-gray-700 cursor-pointer hover:bg-gray-50">
+                Charger un logo
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+              </label>
+              {formData.labLogo && (
+                <button
+                  type="button"
+                  onClick={handleLogoRemove}
+                  className="px-4 py-2 text-sm font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                >
+                  Supprimer
+                </button>
+              )}
+            </div>
+          </div>
+          <p className="mt-2 text-xs text-gray-500">
+            Formats recommandǸs : PNG ou JPG. L&apos;image sera stockǸe localement avec la fiche du laboratoire.
+          </p>
         </div>
 
         <div>
