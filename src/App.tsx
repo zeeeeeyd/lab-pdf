@@ -362,11 +362,15 @@ function App() {
       const facultyLines = pdf.splitTextToSize(facultyColors.fullName, contentWidth);
       ensureSpace(facultyLines.length * lineHeight + 10);
       pdf.text(facultyLines, contentLeft, cursorY);
-      cursorY += facultyLines.length * lineHeight + 2;
+      cursorY += facultyLines.length * lineHeight + 6;
 
       pdf.setFontSize(18);
-      pdf.text(previewData.name || 'N/A', contentLeft, cursorY + 6);
-      cursorY += 12;
+      const maxLabNameWidth = contentWidth - 70;
+      const labNameLines = pdf.splitTextToSize(previewData.name || 'N/A', maxLabNameWidth);
+      labNameLines.forEach((line: string, index: number) => {
+        pdf.text(line, contentLeft, cursorY + 6 + (index * 8));
+      });
+      cursorY += 6 + (labNameLines.length * 8) + 6;
 
       pdf.setFont('helvetica', 'normal');
       pdf.setFontSize(defaultFontSize);
