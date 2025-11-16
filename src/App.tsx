@@ -365,7 +365,7 @@ function App() {
       cursorY += facultyLines.length * lineHeight + 6;
 
       pdf.setFontSize(18);
-      const maxLabNameWidth = contentWidth - 70;
+      const maxLabNameWidth = contentWidth - 45;
       const labNameLines = pdf.splitTextToSize(previewData.name || 'N/A', maxLabNameWidth);
       labNameLines.forEach((line: string, index: number) => {
         pdf.text(line, contentLeft, cursorY + 6 + (index * 8));
